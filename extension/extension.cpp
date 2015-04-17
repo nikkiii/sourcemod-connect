@@ -71,10 +71,26 @@ public:
 	unsigned short	port;
 } netadr_t;
 
-char *CSteamID::Render() const
+enum class AuthIdType
+{
+	Engine = 0,
+	Steam2,
+	Steam3,
+	SteamId64,
+};
+
+char *RenderAuthId(CSteamID id, AuthIdType authType)
 {
 	static char szSteamID[64];
-	V_snprintf(szSteamID, sizeof(szSteamID), "[U:1:%u]", (uint32)m_unAccountID);
+	switch (authType)
+	{
+	case AuthIdType::Steam2:
+		V_snprintf(szSteamID, sizeof(szSteamID), "STEAM_0:%u:%u", (id.m_unAccountID % 2) ? 1 : 0, (int32)id.m_unAccountID/2);
+		break;
+	case AuthIdType::Steam3:
+		V_snprintf(szSteamID, sizeof(szSteamID), "[U:1:%u]", (uint32)id.m_unAccountID);
+		break;
+	}
 	return szSteamID;
 }
 
@@ -256,7 +272,7 @@ DETOUR_DECL_MEMBER9(CBaseServer__ConnectClient, IClient *, netadr_t &, address, 
 	g_pConnectForward->PushString(pchName);
 	g_pConnectForward->PushStringEx(passwordBuffer, 255, SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 	g_pConnectForward->PushString(ipString);
-	g_pConnectForward->PushString(g_lastClientSteamID.Render());
+	g_pConnectForward->PushString(RenderAuthId(g_lastClientSteamID, AuthIdType::Steam2));
 	g_pConnectForward->PushStringEx(rejectReason, 255, SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 
 	cell_t retVal = 1;
@@ -269,6 +285,8 @@ DETOUR_DECL_MEMBER9(CBaseServer__ConnectClient, IClient *, netadr_t &, address, 
 	}
 
 	pchPassword = passwordBuffer;
+	
+	g_lastClientSteamID = k_steamIDNil;
 
 	g_bSuppressCheckChallengeType = true;
 	return DETOUR_MEMBER_CALL(CBaseServer__ConnectClient)(address, nProtocol, iChallenge, iClientChallenge, nAuthProtocol, pchName, pchPassword, pCookie, cbCookie);
@@ -279,6 +297,7 @@ DETOUR_DECL_MEMBER3(CBaseServer__RejectConnection, void, netadr_t &, address, in
 	if (g_bEndAuthSessionOnRejectConnection)
 	{
 		EndAuthSession(g_lastClientSteamID);
+		g_lastClientSteamID = k_steamIDNil;
 		g_bEndAuthSessionOnRejectConnection = false;
 	}
 
@@ -380,6 +399,8 @@ bool Connect::SDK_OnLoad(char *error, size_t maxlen, bool late)
 	CREATE_DETOUR(CBaseServer__CheckChallengeType);
 
 	g_pConnectForward = g_pForwards->CreateForward("OnClientPreConnectEx", ET_LowEvent, 5, NULL, Param_String, Param_String, Param_String, Param_String, Param_String);
+	
+	sharesys->AddNatives(myself, ConnectNatives);
 
 	return true;
 }
@@ -415,3 +436,28 @@ bool Connect::RegisterConCommandBase(ConCommandBase *pCommand)
 
 	return true;
 }
+
+static cell_t GetAuthId(IPluginContext *pCtx, const cell_t *params)
+{
+	if (g_lastClientSteamID.m_unAccountID == 0)
+	{
+		return pCtx->ThrowNativeError("Connect_GetAuthId must be called from within OnClientPreConnectEx");
+	}
+	
+	AuthIdType authType = (AuthIdType)params[1];
+	
+	if (authType != AuthIdType::Steam2 && authType != AuthIdType::Steam3)
+	{
+		return pCtx->ThrowNativeError("Connect_GetAuthId currently only supports Steam2 and Steam3 auth types.");
+	}
+	
+	pCtx->StringToLocal(params[2], (size_t)params[3], RenderAuthId(g_lastClientSteamID, (AuthIdType)params[1]));
+	
+	return 1;
+}
+
+const sp_nativeinfo_t ConnectNatives[] = 
+{
+	{"Connect_GetAuthId",	GetAuthId},
+	{NULL,			NULL},
+};

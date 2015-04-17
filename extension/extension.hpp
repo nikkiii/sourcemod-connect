@@ -100,4 +100,6 @@ public: //IConCommandBaseAccessor
 	bool RegisterConCommandBase(ConCommandBase *pCommand);
 };
 
+extern const sp_nativeinfo_t ConnectNatives[];
+
 #endif // _INCLUDE_SOURCEMOD_EXTENSION_PROPER_H_

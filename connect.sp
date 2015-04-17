@@ -6,7 +6,9 @@
 
 public bool:OnClientPreConnectEx(const String:name[], String:password[255], const String:ip[], const String:steamID[], String:rejectReason[255])
 {
-	PrintToServer("----------------\nName: %s\nPassword: %s\nIP: %s\nSteamID: %s\n----------------", name, password, ip, steamID);
+	char steamID3[64];
+	Connect_GetAuthId(AuthId_Steam3, steamID3, sizeof(steamID3));
+	PrintToServer("----------------\nName: %s\nPassword: %s\nIP: %s\nSteamID2: %s\nSteamID3: %s\n----------------", name, password, ip, steamID, steamID3);
 
 	new AdminId:admin = FindAdminByIdentity(AUTHMETHOD_STEAM, steamID);
 

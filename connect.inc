@@ -5,6 +5,8 @@
 
 forward bool:OnClientPreConnectEx(const String:name[], String:password[255], const String:ip[], const String:steamID[], String:rejectReason[255]);
 
+native bool:Connect_GetAuthId(AuthIdType:authType, String:auth[], int maxlen);
+
 public Extension:__ext_Connect = 
 {
 	name = "Connect",
