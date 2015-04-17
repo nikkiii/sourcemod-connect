@@ -71,7 +71,7 @@ public:
 	unsigned short	port;
 } netadr_t;
 
-enum class AuthIdType
+enum AuthIdType
 {
 	Engine = 0,
 	Steam2,
@@ -85,10 +85,10 @@ char *RenderAuthId(CSteamID id, AuthIdType authType)
 	switch (authType)
 	{
 	case AuthIdType::Steam2:
-		V_snprintf(szSteamID, sizeof(szSteamID), "STEAM_0:%u:%u", (id.m_unAccountID % 2) ? 1 : 0, (int32)id.m_unAccountID/2);
+		V_snprintf(szSteamID, sizeof(szSteamID), "STEAM_0:%u:%u", (id.GetAccountID() % 2) ? 1 : 0, (int32)id.GetAccountID()/2);
 		break;
 	case AuthIdType::Steam3:
-		V_snprintf(szSteamID, sizeof(szSteamID), "[U:1:%u]", (uint32)id.m_unAccountID);
+		V_snprintf(szSteamID, sizeof(szSteamID), "[U:1:%u]", (uint32)id.GetAccountID());
 		break;
 	}
 	return szSteamID;
@@ -439,7 +439,7 @@ bool Connect::RegisterConCommandBase(ConCommandBase *pCommand)
 
 static cell_t GetAuthId(IPluginContext *pCtx, const cell_t *params)
 {
-	if (g_lastClientSteamID.m_unAccountID == 0)
+	if (g_lastClientSteamID.GetAccountID() == 0)
 	{
 		return pCtx->ThrowNativeError("Connect_GetAuthId must be called from within OnClientPreConnectEx");
 	}
