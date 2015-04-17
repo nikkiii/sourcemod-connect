@@ -285,8 +285,6 @@ DETOUR_DECL_MEMBER9(CBaseServer__ConnectClient, IClient *, netadr_t &, address, 
 	}
 
 	pchPassword = passwordBuffer;
-	
-	g_lastClientSteamID = k_steamIDNil;
 
 	g_bSuppressCheckChallengeType = true;
 	return DETOUR_MEMBER_CALL(CBaseServer__ConnectClient)(address, nProtocol, iChallenge, iClientChallenge, nAuthProtocol, pchName, pchPassword, pCookie, cbCookie);
@@ -311,6 +309,8 @@ DETOUR_DECL_MEMBER7(CBaseServer__CheckChallengeType, bool, CBaseClient *, pClien
 		g_bEndAuthSessionOnRejectConnection = false;
 
 		SetSteamID(pClient, g_lastClientSteamID);
+	
+		g_lastClientSteamID = k_steamIDNil;
 
 		g_bSuppressCheckChallengeType = false;
 		return true;
