@@ -90,6 +90,9 @@ char *RenderAuthId(CSteamID id, AuthIdType authType)
 	case AuthIdType::Steam3:
 		V_snprintf(szSteamID, sizeof(szSteamID), "[U:1:%u]", (uint32)id.GetAccountID());
 		break;
+	case AuthIdType::SteamId64:
+		V_snprintf(szSteamID, sizeof(szSteamID), "%llu", id.ConvertToUint64());
+		break;
 	}
 	return szSteamID;
 }
@@ -446,7 +449,7 @@ static cell_t GetAuthId(IPluginContext *pCtx, const cell_t *params)
 	
 	AuthIdType authType = (AuthIdType)params[1];
 	
-	if (authType != AuthIdType::Steam2 && authType != AuthIdType::Steam3)
+	if (authType != AuthIdType::Steam2 && authType != AuthIdType::Steam3 && authType != AuthIdType::SteamId64)
 	{
 		return pCtx->ThrowNativeError("Connect_GetAuthId currently only supports Steam2 and Steam3 auth types.");
 	}
